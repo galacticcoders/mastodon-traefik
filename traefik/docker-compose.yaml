@@ -1,0 +1,69 @@
+version: '3.9'
+services:
+  traefik:
+    image: traefik:v2.9
+    container_name: srv_traefik
+    command:
+      ## Entrypoints
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+      ## Logging
+      - --log=true
+      - --log.level=INFO
+      - --accesslog=true
+      ## API
+      - --api=true
+      - --api.dashboard=true
+      - --api.insecure=true
+      ## Providers
+      - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.network=reverse-proxy
+      - --providers.docker.exposedByDefault=false
+      ## Metrics
+      - --metrics.prometheus=true
+      - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
+      # Certificates
+      - --certificatesResolvers.le.acme.httpchallenge=true
+      - --certificatesResolvers.le.acme.httpchallenge.entrypoint=http
+      - --certificatesResolvers.le.acme.email=pedro.parqueador@galacticcoders.xyz
+      - --certificatesResolvers.le.acme.storage=/letsencrypt/acme.json
+      # Middlewares
+      - --entrypoints.http.http.redirections.entrypoint.to=https
+      - --entrypoints.http.http.redirections.entrypoint.scheme=https
+    restart: unless-stopped
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+      #    expose:
+      #      - 8080
+    networks:
+      - reverse-proxy
+      # - monitoring
+    volumes:
+      # Let's Encrypt certs folder
+      - type: volume
+        source: letsencrypt
+        target: /letsencrypt
+      # Docker
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    driver: bridge
+  # monitoring:
+  #   name: monitoring
+  #   driver: bridge
+volumes:
+  letsencrypt:
