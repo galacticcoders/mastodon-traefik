@@ -1,1 +1,1 @@
-rsync -a --delete --quiet mastodon/docker-compose.yaml /projects/mastodon/docker-compose.yaml
+rsync -a --delete --quiet mastodon/docker-compose.yml /projects/mastodon/docker-compose.yml
